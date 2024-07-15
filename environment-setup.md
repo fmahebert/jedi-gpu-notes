@@ -28,7 +28,6 @@ apt-get upgrade
 
 # Compilers
 apt install -y gcc-11 g++-11 gfortran-11
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-11
 
 # Debuggers
 apt install -y gdb-11
