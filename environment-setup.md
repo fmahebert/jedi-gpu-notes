@@ -86,7 +86,74 @@ Assuming that you have Nvidia drivers install
 
 ## 4. Build GCC Suite with Offload Support
 
-...
+The following script is a work-in-progress:
+```
+#!/bin/sh
+# Build GCC with support for OpenMP offloading to NVIDIA GPUs.
+
+# --- build parameters ---
+N_PROCS=12
+WORKING_DIR=/home/azureuser/tools/build-gcc-12.4
+INSTALL_DIR=/usr/local/gcc-12.4
+CUDA=/usr/local/cuda-12.2
+
+mkdir -p $WORKING_DIR
+
+# --- build assembler and linking tools ---
+git clone https://github.com/MentorEmbedded/nvptx-tools $WORKING_DIR/nvptx-tools
+mkdir $WORKING_DIR/build-nvptx-tools
+cd $WORKING_DIR/build-nvptx-tools
+../nvptx-tools/configure \
+    --with-cuda-driver-include=$CUDA/include \
+    --with-cuda-driver-lib=$CUDA/lib64 \
+    --prefix=$INSTALL_DIR
+make -j$N_PROCS || exit 1
+# make -j$N_PROCS install || exit 1
+cd $WORKING_DIR
+
+# --- set up the GCC source tree ---
+git clone -b newlib-4.3.0 git://sourceware.org/git/newlib-cygwin.git $WORKING_DIR/nvptx-newlib
+git clone -b releases/gcc-12 git://gcc.gnu.org/git/gcc.git $WORKING_DIR/gcc
+cd $WORKING_DIR/gcc
+contrib/download_prerequisites
+ln -s ../nvptx-newlib/newlib newlib
+cd $WORKING_DIR
+target=$(gcc/config.guess)
+
+# --- build nvptx GCC ---
+mkdir $WORKING_DIR/build-nvptx-gcc
+cd $WORKING_DIR/build-nvptx-gcc
+../gcc/configure \
+    --target=nvptx-none --with-build-time-tools=$INSTALL_DIR/nvptx-none/bin \
+    --enable-as-accelerator-for=$target \
+    --disable-sjlj-exceptions \
+    --enable-newlib-io-long-long \
+    --enable-languages="c,c++,fortran,lto" \
+    --prefix=$INSTALL_DIR \
+    --bindir=$INSTALL_DIR/libexec # These executables are internal tools and so should be inside libexec
+make -j$N_PROCS || exit 1
+# make -j$N_PROCS install || exit 1
+cd $WORKING_DIR
+
+# --- build host GCC ---
+mkdir $WORKING_DIR/build-host-gcc
+cd  $WORKING_DIR/build-host-gcc
+../gcc/configure \
+    --enable-offload-targets=nvptx-none \
+    --with-cuda-driver-include=$CUDA/include \
+    --with-cuda-driver-lib=$CUDA/lib64 \
+    --disable-bootstrap \
+    --disable-multilib \
+    --enable-languages="c,c++,fortran,lto" \
+    --prefix=$INSTALL_DIR
+make -j$N_PROCS || exit 1
+# make -j$N_PROCS install || exit 1
+cd $WORKING_DIR
+
+# clean working directory
+# cd $WORKING_DIR/..
+# rm -rf $WORKING_DIR
+```
 
 ## 5. Set-Up Spack-Stack
 
