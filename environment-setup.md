@@ -5,20 +5,17 @@ Follow the Azure documentation with the following modifications:
 - When selecting a VM we chose `Standard NC6s v3`
 - When selecting an operating system we chose `Ubuntu Server 22.04 LTS - x64 Gen2`
 
+References:
+- [Quickstart: Create a Linux virtual machine in the Azure portal](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-portal?tabs=ubuntu)
+
 ## 1. Nvidia Drivers Installtion
-I followed these instructions: https://learn.microsoft.com/en-us/azure/virtual-machines/linux/n-series-driver-setup#ubuntu. And these instructions have some useful additional details https://ubuntu.com/server/docs/nvidia-drivers-installation. But I have also documented the process below:
 
-### Check Current System
-- Check for the presence of an Nvidia GPU (should display name of GPU):
-  ```
-  lspci | grep -i NVIDIA
-  ```
-- Check the version of the current installed Nvidia driver (if there is one, it should display the version):
-  ```
-  cat /proc/driver/nvidia/version
-  ```
+Install the Nvidia Drivers as follows:
 
-### Installation
+1. Check for the presence of an Nvidia GPU (should display name of GPU):
+   ```
+   lspci | grep -i NVIDIA
+   ```
 1. Install Ubuntu drivers utility:
    ```
    sudo apt update && sudo apt install -y ubuntu-drivers-common
@@ -28,13 +25,18 @@ I followed these instructions: https://learn.microsoft.com/en-us/azure/virtual-m
    sudo ubuntu-drivers install nvidia:535
    ```
 1. **Reboot** machine.
+1. Verify that the driver is working (should report info about GPU):
+   ```
+   nvidia-smi
+   ```
 
-### Verification
-- Check that the driver is working (should report info about GPU): `nvidia-smi`
+References:
+- [Azure N-Series Linux VM Driver Installation](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/n-series-driver-setup)
+- [Ubuntu Driver Installtion](https://ubuntu.com/server/docs/nvidia-drivers-installation)
 
 ## 2. CUDA Toolkit Installation
 
-Assuming that you have Nvidia drivers install
+Assuming that you have Nvidia drivers installed, install the CUDA Toolkit as follows:
 
 1. Add Nvidia package repository:
     ```
@@ -52,9 +54,12 @@ Assuming that you have Nvidia drivers install
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
     ```
 
+References:
+- [CUDA Installation Guide for Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
+
 ## 3. Install GCC-12 with Offload Support
 
-1. Install `nvptx-tools` using the following script. The script creates a tempory directory in the CWD, where it builds the package from source before installing it (during execution, a key press will be necessary due to the `apt-add-repository` command). **Note**: the reason that we are installing nvptx-tools like this is that the nvptx-tools package for Ubuntu 22.04 is tool old for gcc-12 which leads to compilation issues.
+1. Install nvptx-tools using the following script. The script creates a tempory directory in the CWD, where it builds the package from source before installing it (during execution, a key press will be necessary due to the `apt-add-repository` command). **Note**: the reason that we are installing nvptx-tools like this is because the nvptx-tools package for Ubuntu 22.04 is tool old for gcc-12 and using this old package results in compilation issues.
     ```
     #!/bin/bash
 
@@ -93,7 +98,6 @@ Assuming that you have Nvidia drivers install
     ### Destroy temporary build directory
     rm -rf $TMP_DIR
     ```
-    **Note**: the nvptx-tools package for Ubuntu 22.04 is tool old for gcc-12 and so we build a newer version of the package from source and install this.
 
 1. Install gcc-12 with offload supports:
    ```
@@ -102,7 +106,7 @@ Assuming that you have Nvidia drivers install
 
 ## 4. Set-Up Spack-Stack
 
-Set-up Spack-Stack as per its documentation ([Ubuntu Prerequisites](https://spack-stack.readthedocs.io/en/latest/NewSiteConfigs.html#prerequisites-ubuntu-one-off) [Create a new environment](https://spack-stack.readthedocs.io/en/latest/NewSiteConfigs.html#newsiteconfigs-linux-createenv)) with the following modifications:
+Set-up Spack-Stack as per its documentation (see [Ubuntu Prerequisites](https://spack-stack.readthedocs.io/en/latest/NewSiteConfigs.html#prerequisites-ubuntu-one-off) and [Create a new environment](https://spack-stack.readthedocs.io/en/latest/NewSiteConfigs.html#newsiteconfigs-linux-createenv)) with the following modifications:
 - (optional) When installing the prerequisites, you can skip the installation of the compilers `gcc g++ gfortran` which will install gcc-11 on Ubuntu 22.04.
 - When creating an envionment:
     - at step (5): verify that gcc-12 was found
