@@ -22,7 +22,7 @@ Install the Nvidia Drivers as follows:
    ```
 1. Install Nvidia drivers:
    ```
-   sudo ubuntu-drivers install nvidia:535
+   sudo ubuntu-drivers install nvidia:545
    ```
 1. **Reboot** machine.
 1. Verify that the driver is working (should report info about GPU):
@@ -46,7 +46,7 @@ Assuming that you have Nvidia drivers installed, install the CUDA Toolkit as fol
     ```
 1. Install CUDA Toolkit:
    ```
-   sudo apt -y install cuda-toolkit-12-2
+   sudo apt -y install cuda-toolkit-12-3
    ```
 1. Set-up paths (you may want to add these to `.profile` or `.bashrc` etc):
     ```
