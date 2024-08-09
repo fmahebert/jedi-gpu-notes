@@ -1,5 +1,8 @@
 # JEDI Development Environment Set-up on Ubuntu 22.04 with GCC Offload Support
 
+## Warnings
+- We have had issues, with `apt upgrade` upgrading the Nvidia 535 drivers into a broken state. While we have made an effort to mitigate this (see Install Nvidia Drivers step), we suggest upgrading the system packages as the initial step and then refraining from any further use of `apt upgrade`.
+
 ## 0. Provision an Azure VM
 Follow the Azure documentation with the following modifications:
 - When selecting a VM we chose `Standard NC6s v3`
@@ -9,7 +12,14 @@ Follow the Azure documentation with the following modifications:
 References:
 - [Quickstart: Create a Linux virtual machine in the Azure portal](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-portal?tabs=ubuntu)
 
-## 1. Install Nvidia Drivers
+## 1. Upgrade System Packages
+
+1. Upgrade system packages:
+   ```
+   sudo apt upgrade
+   ```
+
+## 2. Install Nvidia Drivers
 
 Install the Nvidia Drivers as follows:
 
@@ -25,10 +35,6 @@ Install the Nvidia Drivers as follows:
    ```
    sudo ubuntu-drivers install nvidia:535
    ```
-1. Add some Nvidia driver packages to a no upgrade list to protect against `apt upgrade` introducing version miss-matches:
-   ```
-   sudo apt-mark hold libnvidia-common-535 libxnvctrl0
-   ```
 1. **Reboot** machine.
 1. Verify that the driver is working (should report info about GPU):
    ```
@@ -39,7 +45,7 @@ References:
 - [Azure N-Series Linux VM Driver Installation](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/n-series-driver-setup)
 - [Ubuntu Driver Installation](https://ubuntu.com/server/docs/nvidia-drivers-installation)
 
-## 2. Install CUDA Toolkit
+## 3. Install CUDA Toolkit
 
 Assuming that you have Nvidia drivers installed, install the CUDA Toolkit as follows:
 
@@ -58,11 +64,18 @@ Assuming that you have Nvidia drivers installed, install the CUDA Toolkit as fol
     export PATH=/usr/local/cuda/bin:$PATH
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
     ```
+1. Remove the Nvidia package repository:
+   ```
+   sudo apt --purge remove cuda-keyring
+   sudo apt update
+   rm ./cuda-keyring_1.1-1_all.deb
+   ```
+   **Note**: we are doing this because we have had issues with subsequent `apt upgrade`s pulling Nvidia driver 535 packages from the Nvidia repo that leave the system in a broken state.
 
 References:
 - [CUDA Installation Guide for Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
 
-## 3. Install GCC-12 with Offload Support
+## 4. Install GCC-12 with Offload Support
 
 1. Install nvptx-tools using the following script. The script creates a tempory directory in the CWD, where it builds the package from source before installing it (during execution, a key press will be necessary due to the `apt-add-repository` command). **Note**: the reason that we are installing nvptx-tools like this is because the nvptx-tools package for Ubuntu 22.04 is tool old for gcc-12 and using this old package results in compilation issues.
     ```
@@ -109,10 +122,12 @@ References:
    sudo apt install -y gcc-12 g++-12 gfortran-12 gcc-12-offload-nvptx
    ```
 
-## 4. Set up Spack-Stack
+## 5. Set up Spack-Stack
 
 Set up spack-stack as per its documentation (see [Ubuntu Prerequisites](https://spack-stack.readthedocs.io/en/1.7.0/NewSiteConfigs.html#prerequisites-ubuntu-one-off) and [Create a new environment](https://spack-stack.readthedocs.io/en/1.7.0/NewSiteConfigs.html#newsiteconfigs-linux-createenv)) with the following modifications:
-- (optional) When installing the prerequisites, you can skip the installation of the compilers `gcc g++ gfortran` which will install gcc-11 on Ubuntu 22.04.
+- When installing the prerequisites:
+   - **Do not** perform the `apt upgrade` command.
+   - (optional) you can skip the installation of the compilers `gcc g++ gfortran` which will install gcc-11 on Ubuntu 22.04.
 - When cloning spack-stack, make sure to specify the latest stable release `v1.7.0` to avoid any breakage on the develop branch:
     - clone via `git clone -b release/1.7.0 --recurse-submodules https://github.com/jcsda/spack-stack.git`
     - make sure to follow the setup instructions _for v1.7.0_ as in the links above — check the lower-right corner of the webpage for the documentation version
@@ -137,7 +152,7 @@ module load qhull  # reload atlas dependency
 
 **Note**: We anticipate that the GPU project will end up using custom branches of atlas. That's why we unload the spack-stack atlas module above, and build atlas within jedi-bundle in the section below.
 
-## 5. Build JEDI
+## 6. Build JEDI
 
 Clone and build the jedi-bundle on branch `feature/gpu-offload-example`; this adds in-bundle atlas, trims the bundle to the repos needed to demonstrate GPU offload in saber, and sets up the GPU offload build environment.
 
