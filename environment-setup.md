@@ -169,7 +169,7 @@ ctest
 
 **Note**: the atlas ctest `atlas_fctest_field_host` is expected to fail because of a bug in the test itself (atlas issue #216)
 
-In this branch, the oops helper `util::multiplyFieldSet` is offloaded to GPU. This code is exercised, for example, in the ctest `saber_test_dirac_stddev_1_1-1`. One way to verify the offload is occurring is to run the ctest through Nvidia's profiler, as below.
+In this branch, the oops helper `util::multiplyFieldSet` is offloaded to GPU. This code is exercised, for example, in the ctest `saber_test_dirac_stddev_1_1-1`. One way to verify the offload is occurring is to run the ctest through Nvidia's kernel profiler (Nsight-Compute), as below.
 
 ```
 cd /path/to/jedi/build/saber/test
